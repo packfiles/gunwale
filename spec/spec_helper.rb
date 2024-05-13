@@ -32,7 +32,7 @@ RSpec.configure do |config|
   Kernel.srand config.seed
 
   config.before :suite do
-    dbconfig = YAML.load(File.open("db/config.yml"))
+    dbconfig = YAML.safe_load(File.open("db/config.yml"), aliases: true)
     ActiveRecord::Base.establish_connection(dbconfig["test"])
   end
 
