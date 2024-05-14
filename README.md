@@ -1,8 +1,10 @@
-# RowBoat
+# Gunwale
 
-Created by &nbsp;&nbsp;&nbsp; [<img src="https://raw.githubusercontent.com/devmynd/row_boat/master/devmynd-logo.png" alt="DevMynd Logo" />](https://www.devmynd.com/)
+> [!IMPORTANT]  
+> Gunwale is Packfiles' fork of the [row_boat](https://github.com/madeintandem/row_boat) gem, which is no longer maintained by the original author.
 
-[![Gem Version](https://badge.fury.io/rb/row_boat.svg)](http://badge.fury.io/rb/row_boat) &nbsp;&nbsp;&nbsp;[![Build Status](https://travis-ci.org/devmynd/row_boat.svg?branch=master)](https://travis-ci.org/devmynd/row_boat)
+
+[![Gem Version](https://badge.fury.io/rb/gunwale.svg)](http://badge.fury.io/rb/gunwale)
 
 A simple gem to help you import CSVs into your ActiveRecord models.
 
@@ -23,7 +25,7 @@ It uses [SmarterCSV](https://github.com/tilo/smarter_csv) and [`activerecord-imp
 Add this line to your application's Gemfile:
 
 ```ruby
-gem "row_boat", "~> 0.4"
+gem "gunwale", "~> 0.5.0", require: "row_boat"
 ```
 
 And then execute:
@@ -94,7 +96,7 @@ After checking out the repo, run `bin/setup` to install dependencies. Then, run 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/devmynd/row_boat. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
+Bug reports and pull requests are welcome on GitHub at https://github.com/packfiles/gunwale. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
 
 ## License
 
