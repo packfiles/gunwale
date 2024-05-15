@@ -36,6 +36,7 @@ module RowBoat
       batch_size
       ignore
       on_duplicate_key_ignore
+      on_duplicate_key_update
       recursive
       synchronize
       timestamps
