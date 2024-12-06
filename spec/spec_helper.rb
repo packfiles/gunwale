@@ -6,8 +6,8 @@ require "active_record"
 require "database_cleaner"
 require "yaml"
 
-require_relative "./support/product"
-require_relative "./support/product_csvs"
+require_relative "support/product"
+require_relative "support/product_csvs"
 
 RSpec.configure do |config|
   config.include ProductCSVs

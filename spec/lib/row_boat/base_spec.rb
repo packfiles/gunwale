@@ -13,7 +13,7 @@ RSpec.describe RowBoat::Base do
       end
 
       def column_mapping
-        { namey: :name, ranky: :rank, description: :description }
+        {namey: :name, ranky: :rank, description: :description}
       end
 
       instance_eval(&block) if block
@@ -84,8 +84,8 @@ RSpec.describe RowBoat::Base do
   end
 
   describe "#default_options" do
-    let(:column_mapping) { { column: :map } }
-    let(:value_converter_mapping) { { value: :converter } }
+    let(:column_mapping) { {column: :map} }
+    let(:value_converter_mapping) { {value: :converter} }
     before do
       allow(subject).to receive(:column_mapping).and_return(column_mapping)
       expect(subject).to receive(:csv_value_converters).and_return(value_converter_mapping)
@@ -116,7 +116,7 @@ RSpec.describe RowBoat::Base do
     end
 
     context "column_mapping is a hash" do
-      let(:column_mapping) { { column: :map } }
+      let(:column_mapping) { {column: :map} }
 
       it "includes the column_mapping as `key_mapping`" do
         expect(subject.default_options[:key_mapping]).to eq(column_mapping)
@@ -170,7 +170,7 @@ RSpec.describe RowBoat::Base do
       let(:import_class) do
         build_subclass do
           define_method :options do
-            { wrap_in_transaction: false, foo: true }
+            {wrap_in_transaction: false, foo: true}
           end
         end
       end
@@ -355,7 +355,7 @@ RSpec.describe RowBoat::Base do
       let(:import_class) do
         build_subclass do
           define_method :value_converters do
-            { name: :convert_name }
+            {name: :convert_name}
           end
 
           define_method :convert_name do |value|
@@ -417,7 +417,7 @@ RSpec.describe RowBoat::Base do
       let(:import_class) do
         build_subclass do
           define_method :preprocess_row do |row|
-            row[:rank] > 1 ? nil : row
+            (row[:rank] > 1) ? nil : row
           end
         end
       end
@@ -433,7 +433,7 @@ RSpec.describe RowBoat::Base do
   end
 
   describe "#preprocess_row" do
-    let(:row) { { column: :value } }
+    let(:row) { {column: :value} }
 
     it "is the given row" do
       expect(subject.preprocess_row(row)).to equal(row)
@@ -441,7 +441,7 @@ RSpec.describe RowBoat::Base do
   end
 
   describe "#import_rows" do
-    let(:row) { { name: "foo", rank: 1 } }
+    let(:row) { {name: "foo", rank: 1} }
     let(:rows) { [row] }
     let(:import_class) do
       build_subclass do
@@ -474,7 +474,7 @@ RSpec.describe RowBoat::Base do
   end
 
   describe "#preprocess_rows" do
-    let(:row) { { name: "foo", rank: 3 } }
+    let(:row) { {name: "foo", rank: 3} }
     let(:rows) { [row] }
     let(:import_class) do
       build_subclass do
@@ -486,17 +486,17 @@ RSpec.describe RowBoat::Base do
     subject { import_class.new(product_csv_path) }
 
     it "preprocesses the rows with `preprocess_row`" do
-      expect(subject.preprocess_rows(rows)).to eq([{ name: "preprocessed", rank: 3 }])
+      expect(subject.preprocess_rows(rows)).to eq([{name: "preprocessed", rank: 3}])
     end
 
     context "`preprocess_row` returns nil" do
-      let(:row_1) { { name: "foo", rank: 2 } }
-      let(:row_2) { { name: "foo", rank: 3 } }
+      let(:row_1) { {name: "foo", rank: 2} }
+      let(:row_2) { {name: "foo", rank: 3} }
       let(:rows) { [row_1, row_2] }
       let(:import_class) do
         build_subclass do
           define_method :preprocess_row do |row|
-            row[:rank] == 3 ? nil : row
+            (row[:rank] == 3) ? nil : row
           end
         end
       end
@@ -509,7 +509,7 @@ RSpec.describe RowBoat::Base do
   end
 
   describe "#handle_failed_row" do
-    let(:failed_row) { { i_have: :failed } }
+    let(:failed_row) { {i_have: :failed} }
 
     it "returns the failed instance" do
       expect(subject.handle_failed_row(failed_row)).to equal(failed_row)
@@ -529,9 +529,9 @@ RSpec.describe RowBoat::Base do
 
     let(:rows) do
       [
-        { name: "foo" },
-        { name: "bar" },
-        { name: "baz" }
+        {name: "foo"},
+        {name: "bar"},
+        {name: "baz"}
       ]
     end
 

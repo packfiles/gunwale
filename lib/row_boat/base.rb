@@ -19,8 +19,8 @@ module RowBoat
       # @return [Hash] a hash with +:invalid_records+, +:total_inserts+, +:inserted_ids+, and +:skipped_rows+.
       #
       # @see https://github.com/tilo/smarter_csv#documentation SmarterCSV Docs
-      def import(*args, &block)
-        new(*args, &block).import
+      def import(*, &)
+        new(*, &).import
       end
     end
 
@@ -266,9 +266,9 @@ module RowBoat
     def column_mapping_options
       case column_mapping
       when Hash
-        { key_mapping: column_mapping, remove_unmapped_keys: true }
+        {key_mapping: column_mapping, remove_unmapped_keys: true}
       when Array
-        { user_provided_headers: column_mapping }
+        {user_provided_headers: column_mapping}
       else
         raise InvalidColumnMapping, "#column_mapping must be a Hash or an Array: got `#{column_mapping}`"
       end
@@ -282,9 +282,9 @@ module RowBoat
 
     # @api private
     # @private
-    def parse_rows(&block)
+    def parse_rows(&)
       csv_options = ::RowBoat::Helpers.extract_csv_options(merged_options)
-      ::SmarterCSV.process(csv_source, csv_options, &block)
+      ::SmarterCSV.process(csv_source, csv_options, &)
     end
 
     # @api private
