@@ -25,7 +25,7 @@ It uses [SmarterCSV](https://github.com/tilo/smarter_csv) and [`activerecord-imp
 Add this line to your application's Gemfile:
 
 ```ruby
-gem "gunwale", "~> 0.5.0", require: "row_boat"
+gem "gunwale", require: "row_boat"
 ```
 
 And then execute:
