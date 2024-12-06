@@ -398,6 +398,14 @@ RSpec.describe RowBoat::Base do
             %i[name rank description ignored]
           end
 
+          # headers_in_file: Whether or not the file contains headers as the first line.
+          # if `user_provided_headers` is given, the default is `false`, unless
+          # you specify it to be explicitly `true`.
+          # Ref: https://github.com/tilo/smarter_csv/blob/main/docs/options.md
+          define_method :options do
+            {headers_in_file: true}
+          end
+
           define_method :preprocess_row do |row|
             row.delete(:ignored)
             row
