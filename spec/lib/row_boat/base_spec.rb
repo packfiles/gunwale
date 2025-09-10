@@ -245,7 +245,7 @@ RSpec.describe RowBoat::Base do
     context "wrapping in a transaction" do
       context "invalid row" do
         let(:import_class) do
-          build_subclass_with_options(wrap_in_transaction: true, chunk_size: 1)
+          build_subclass_with_options(wrap_in_transaction: true, chunk_size: 1, validate: false)
         end
 
         subject { import_class.new(product_csv_path) }
@@ -280,7 +280,7 @@ RSpec.describe RowBoat::Base do
 
     context "not wrapping in a transaction" do
       let(:import_class) do
-        build_subclass_with_options(wrap_in_transaction: false, chunk_size: 1)
+        build_subclass_with_options(wrap_in_transaction: false, chunk_size: 1, validate: false)
       end
 
       subject { import_class.new(product_csv_path) }
@@ -481,6 +481,44 @@ RSpec.describe RowBoat::Base do
     end
   end
 
+  describe "#dedupe_on_conflict_target" do
+    let(:klass) do
+      build_subclass do
+        define_method :options do
+          {on_duplicate_key_update: {conflict_target: [:project_id, :url]}}
+        end
+      end
+    end
+    subject { klass.new(product_csv_path) }
+
+    it "keeps last duplicate on full conflict key" do
+      rows = [
+        {project_id: 1, url: "u", path: "a"},
+        {project_id: 1, url: "u", path: "b"} # winner
+      ]
+      out = subject.send(:dedupe_on_conflict_target, rows, RowBoat::Helpers.extract_import_options(subject.merged_options))
+      expect(out.size).to eq(1)
+      expect(out.first[:path]).to eq("b")
+    end
+
+    it "does not collide when a key is missing in one row" do
+      rows = [
+        {url: "u", path: "a"},                 # missing project_id
+        {project_id: 1, url: "u", path: "b"}
+      ]
+      out = subject.send(:dedupe_on_conflict_target, rows, RowBoat::Helpers.extract_import_options(subject.merged_options))
+      expect(out.size).to eq(2)
+    end
+
+    it "skips dedupe for non-Hash rows" do
+      # Simulate preprocess_row returning AR instances
+      ar1 = Product.new(name: "x")
+      ar2 = Product.new(name: "y")
+      out = subject.send(:dedupe_on_conflict_target, [ar1, ar2], RowBoat::Helpers.extract_import_options(subject.merged_options))
+      expect(out).to match_array([ar1, ar2])
+    end
+  end
+
   describe "#preprocess_rows" do
     let(:row) { {name: "foo", rank: 3} }
     let(:rows) { [row] }
@@ -630,6 +668,122 @@ RSpec.describe RowBoat::Base do
   describe "#rollback_transaction?" do
     it "is false" do
       expect(subject.rollback_transaction?).to eq(false)
+    end
+  end
+
+  describe "#import_rows / dedupe integration" do
+    def subclass_with_conflict(opts = {})
+      build_subclass do
+        define_method :options do
+          {
+            validate: false,                # force DB error path, not validations
+            chunk_size: 5,
+            on_duplicate_key_update: {
+              conflict_target: [:rank],
+              columns: [:name]
+            }
+          }.merge(opts)
+        end
+      end
+    end
+
+    it "dedupes duplicates in the same chunk and avoids PG cardinality error" do
+      klass = subclass_with_conflict
+      importer = klass.new(product_csv_path)
+
+      rows = [
+        {name: "a", rank: 1, description: "x"},
+        {name: "b", rank: 1, description: "y"} # same :rank conflict target
+      ]
+
+      # simulate a single SmarterCSV chunk
+      expect {
+        importer.import_rows(rows)
+      }.not_to raise_error
+
+      # last write wins
+      p = Product.find_by(rank: 1)
+      expect(p.name).to eq("b")
+    end
+
+    it "raises ActiveRecord::RecordNotUnique when conflict_target is missing" do
+      klass = build_subclass do
+        define_method :options do
+          {validate: false, chunk_size: 5}
+          # no on_duplicate_key_update
+        end
+      end
+      importer = klass.new(product_csv_path)
+
+      # priming record to ensure unique index exists on :rank
+      Product.create!(name: "seed", rank: 3)
+
+      rows = [
+        {name: "foo", rank: 3},
+        {name: "bar", rank: 3} # same UNIQUE(:rank) in one INSERT
+      ]
+
+      expect {
+        importer.import_rows(rows)
+      }.to raise_error(ActiveRecord::RecordNotUnique)
+    end
+
+    it "dedupes even when rows mix symbol and string keys" do
+      klass = build_subclass do
+        define_method :options do
+          {
+            validate: false,
+            on_duplicate_key_update: {conflict_target: [:rank], columns: [:name]}
+          }
+        end
+      end
+      importer = klass.new(product_csv_path)
+
+      rows = [
+        {rank: 7, name: "first"},
+        {rank: 7, name: "second"} # last wins
+      ]
+
+      expect { importer.import_rows(rows) }.not_to raise_error
+      expect(Product.find_by(rank: 7).name).to eq("second")
+    end
+
+    it "skips dedupe when rows include non-Hash instances" do
+      klass = build_subclass do
+        define_method :options do
+          {on_duplicate_key_update: {conflict_target: [:rank], columns: [:name]}}
+        end
+      end
+      importer = klass.new(product_csv_path)
+
+      out = importer.send(:dedupe_on_conflict_target, [Product.new, Product.new], RowBoat::Helpers.extract_import_options(importer.merged_options))
+      expect(out.size).to eq(2)
+    end
+
+    it "does not raise when duplicates land in different chunks" do
+      klass = build_subclass do
+        define_method :options do
+          {validate: false, chunk_size: 1} # forces separate INSERTs
+        end
+      end
+      importer = klass.new(product_csv_path)
+
+      rows = [
+        {name: "a", rank: 11},
+        {name: "b", rank: 11}
+      ]
+
+      # Simulate SmarterCSV invoking import_rows twice with chunk_size: 1
+      expect { importer.import_rows([rows.first]) }.not_to raise_error
+      expect { importer.import_rows([rows.last]) }.to raise_error(ActiveRecord::RecordNotUnique)
+    end
+  end
+
+  describe "Helpers.extract_import_options" do
+    it "keeps on_duplicate_key_update" do
+      opts = {on_duplicate_key_update: {conflict_target: [:rank], columns: [:name]}, foo: :bar}
+      expect(RowBoat::Helpers.extract_import_options(opts)).to include(:on_duplicate_key_update)
+      expect(RowBoat::Helpers.extract_import_options(opts)[:on_duplicate_key_update][:conflict_target]).to eq([:rank])
     end
   end
 end

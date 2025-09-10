@@ -29,7 +29,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "appraisal", "~> 2.5"
   spec.add_development_dependency "awesome_print"
   spec.add_development_dependency "bundler", "~> 2.5.9"
-  spec.add_development_dependency "database_cleaner", "~> 2.0", ">= 2.0.2"
+  spec.add_development_dependency "database_cleaner", "~> 2.1", ">= 2.1.0"
   spec.add_development_dependency "pg"
   spec.add_development_dependency "pry"
   spec.add_development_dependency "pry-doc"

@@ -8,6 +8,9 @@ module RowBoat
   class Base
     InvalidColumnMapping = Class.new(StandardError)
 
+    SENTINEL = :__ROWBOAT_ABSENT__
+    private_constant :SENTINEL
+
     attr_reader :csv_source
 
     class << self
@@ -110,6 +113,11 @@ module RowBoat
     def import_rows(rows)
       import_options = ::RowBoat::Helpers.extract_import_options(merged_options)
       preprocessed_rows = preprocess_rows(rows)
+
+      # Prevent "ON CONFLICT ... cannot affect row a second time" by
+      # deduplicating input rows on the declared conflict target.
+      preprocessed_rows = dedupe_on_conflict_target(preprocessed_rows, import_options)
+
       import_into.import(preprocessed_rows, import_options)
     end
 
@@ -298,6 +306,27 @@ module RowBoat
       else
         yield
       end
+    end
+
+    # Deduplicate rows on the activerecord-import conflict target (if any).
+    # Keeps the *last* occurrence for deterministic "last write wins" behavior.
+    def dedupe_on_conflict_target(rows, import_options)
+      return rows if rows.empty?
+
+      conflict_target = Array(import_options.dig(:on_duplicate_key_update, :conflict_target))
+                        .map { |k| k.is_a?(Symbol) ? k : k.to_s.to_sym }
+      return rows if conflict_target.empty?
+
+      # If any row is not a Hash-like payload, we can’t safely dedupe.
+      return rows unless rows.all? { |r| r.is_a?(Hash) }
+
+      # Last row wins
+      seen = {}
+      rows.each do |r|
+        key = conflict_target.map { |k| r.key?(k) ? r[k] : SENTINEL }
+        seen[key] = r
+      end
+      seen.values
     end
 
     # @api private
