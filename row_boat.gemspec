@@ -22,9 +22,9 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "activerecord", "~> 8.0", "< 8.1"
-  spec.add_dependency "activerecord-import", "~> 1.6"
-  spec.add_dependency "smarter_csv", "~> 1.13", ">= 1.13.0"
+  spec.add_dependency "activerecord", ">= 7.1", "< 9.0"
+  spec.add_dependency "activerecord-import", ">= 1.6", "< 2.0"
+  spec.add_dependency "smarter_csv", ">= 1.13", "< 2.0"
 
   spec.add_development_dependency "appraisal", "~> 2.5"
   spec.add_development_dependency "awesome_print"
@@ -37,6 +37,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rake", "~> 13.2", ">= 13.2.1"
   spec.add_development_dependency "rspec", "~> 3.13"
   spec.add_development_dependency "rubocop", "~> 1.63", ">= 1.63.5"
-  spec.add_development_dependency "standalone_migrations", "~> 8.0"
+  spec.add_development_dependency "standalone_migrations", ">= 7.1", "< 9.0"
   spec.add_development_dependency "yard", "~> 0.9.36"
 end
